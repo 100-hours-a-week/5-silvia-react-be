@@ -1,151 +1,112 @@
 {
   "2": {
+    "authorId": "1",
     "author": "user1",
     "authorImage": "https://randomuser.me/api/portraits/men/2.jpg",
-    "postImage": "https://i.ytimg.com/vi/dXI24i0jzpU/hq720.jpg?sqp=-oaymwE7CK4FEIIDSFryq4qpAy0IARUAAAAAGAElAADIQj0AgKJD8AEB-AH-CYAC0AWKAgwIABABGHIgTSgwMA8=&rs=AOn4CLAeXqkkBnd75QmdoqAlbe08i3oqoQ",
-    "postTitle": "감동dvasdgv",
+    "postImage": "https://blog.kakaocdn.net/dn/WTD2V/btrzifPHTmf/MHtFXGZ4bymk8pPzm15qv1/img.png",
+    "postTitle": "감동실화",
     "date": "2024-02-14 20:10:33",
-    "postContents": "🐜🐜개미는(뚠뚠)🐜🐜언제나(뚠뚠)=",
-    "views": 5,
+    "postContents": "🐜🐜개미는(뚠뚠)🐜🐜언제나(뚠뚠)🐜🐜열심히일을하네(뚠뚠)🐜🐜개미는아무말도하지않지만(띵가띵가)🐜🐜땀을뻘뻘흘리면서(띵가띵가)🐜🐜매일매일을살기위해서열심히일하네(띵가띵가)🐜🐜한치앞도(뚠뚠)🐜🐜모르는(뚠뚠)🐜🐜험한이세상개미도배짱이도알수없지만그렇지만오늘도행복하다네(뚠뚠)🐜 개미는(뚠뚠)🐜🐜오늘도(뚠뚠)🐜🐜열심히 일을 하네(뚠뚠)🐜🐜개미는(뚠뚠)🐜🐜언제나(뚠뚠)🐜🐜열심히일을하네(뚠뚠)🐜🐜개미는아무말도하지않지만(띵가띵가)🐜🐜땀을뻘뻘흘리면서(띵가띵가)🐜🐜매일매일을살기위해서열심히일하네(띵가띵가)🐜🐜한치앞도(뚠뚠)🐜.",
+    "views": 70,
     "likes": 10,
     "comments": [
       {
         "commentId": 1,
+        "commenterId": 1,
         "commentText": "ㅋㅋㅋㅋㅋㄴㅇㄹㅁㄴㅇㄹㅋㅋ 너무 웃겨요 ㅋㅋㅋ",
-        "commenter": "김물민",
-        "commenterImage": "https://randomuser.me/api/portraits/women/4.jpg",
         "commentDate": "2024-02-14 20:10:33"
       },
       {
         "commentId": 2,
+        "commenterId": 2,
         "commentText": "푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪ 푸핫! ㅋ㉪ヲ刁 푸하하핫! 刁ㅋ㉪ヲ刁ㅋ㉪",
-        "commenter": "김물민",
-        "commenterImage": "https://randomuser.me/api/portraits/women/4.jpg",
         "commentDate": "2024-02-14 20:10:33"
       },
       {
         "commentId": 3,
+        "commenterId": 3,
         "commentText": "이거 진짜 귀엽다! ",
-        "commenter": "그냥 사람",
-        "commenterImage": "https://randomuser.me/api/portraits/men/5.jpg",
         "commentDate": "2024-02-14 20:10:33"
       }
     ]
   },
   "3": {
+    "authorId": "2",
     "author": "user2",
     "authorImage": "https://randomuser.me/api/portraits/men/10.jpg",
-    "postImage": "https://mblogthumb-phinf.pstatic.net/MjAyMzAyMTBfMTAg/MDAxNjc2MDE0MjcxODA2.VkVVv72z64j4-psCN9ijnrlgtQzswUtfJ5aRea__JuYg.MhyKT-efrtu1PJMOauo4Bz1V-oT10ul7Dofid6x-T5Ag.JPEG.yubine/maxresdefault%EF%BC%8D3.jpg?type=w800",
+    "postImage": "https://wimg.mk.co.kr/meet/neds/2022/10/image_readtop_2022_906131_16656489935195537.jpg",
     "postTitle": "영양쌈밥 레시피 ",
     "date": "2024-04-01 15:22:33",
     "postContents": "༼;´༎ຶ۝༎ຶ༽우워어어",
-    "views": 50,
+    "views": 68,
     "likes": 10,
     "comments": [
       {
-        "commentId": 3,
+        "commentId": 1,
+        "commenterId": 3,
         "commentText": "신비로운 해골섬의 전설적인 야수 '킹콩', 뉴욕으로 잡혀 온'킹콩'이 도심 한복판에서 벌이는 숨막히는 액션과 환상적인 로맨스가 펼쳐진다! ",
-        "commenter": "킹콩",
-        "commenterImage": "https://randomuser.me/api/portraits/women/4.jpg",
         "commentDate": "2024-04-01 15:22:33"
       }
     ]
   },
   "5": {
+    "authorId": "1",
     "author": "user1",
     "authorImage": "https://randomuser.me/api/portraits/men/2.jpg",
-    "postImage": "https://www.ddengle.com/files/attach/images/11334861/189/465/015/4b9097d5699b7fa4b153b1dd8d97814c.jpeg",
+    "postImage": "https://png.pngtree.com/thumb_back/fh260/background/20230527/pngtree-small-animal-is-eating-some-sage-image_2676357.jpg",
     "postTitle": "Wonderwall",
     "date": "2024-01-20 08:30:15",
     "postContents": "와우〰〰️ 그거 정말 ™️ℹ️인걸요⁉️ 매우 흥미롭지 않아요❗한 귀👂🏻로 듣고 한 귀👂🏻로 흘릴게요〰️‼️ 와우〰〰️ 그거 정말 ™️ℹ️인걸요⁉️ 매우 흥미롭지 않아요❗한 귀👂🏻로 듣고 한 귀👂🏻로 흘릴게요〰️‼️ 와우〰〰️ 그거 정말 ™️ℹ️인걸요⁉️ 매우 흥미롭지 않아요❗한 귀👂🏻로 듣고 한 귀👂🏻로 흘릴게요〰️‼️ ",
-    "views": 999,
+    "views": 1002,
     "likes": 2500,
     "comments": [
       {
-        "commentId": 4,
-        "commentText": "로또번호 알려주세요",
-        "commenter": "제발",
-        "commenterImage": "https://randomuser.me/api/portraits/women/6.jpg",
-        "commentDate": "2024-01-20 08:30:15"
-      },
-      {
-        "commentId": 5,
-        "commentText": "다들 기상!!!!! ⏰⚡️⏰⚡️⏰⚡️⏰⚡️⏰⚡️⏰⚡️ ⏰⚡️⏰⚡️⏰⚡️⏰⚡️⏰⚡️⏰⚡️ 🔊 빠빠빠😄- 빠-? 빠 ?빠빠빠빠?‼- 🌝굿모닝🌞 빠빠빠 뷰티풀↗📣데이 ?",
-        "commenter": "김공주",
-        "commenterImage": "https://randomuser.me/api/portraits/men/7.jpg",
-        "commentDate": "2024-01-20 08:30:15"
-      },
-      {
-        "commentId": 6,
-        "commentText": "지당한 말씀이십니다.",
-        "commenter": "홍길동",
-        "commenterImage": "https://randomuser.me/api/portraits/men/5.jpg",
-        "commentDate": "2024-01-20 08:30:15"
-      }
-    ]
-  },
-  "6": {
-    "author": "user3",
-    "authorImage": "https://randomuser.me/api/portraits/men/14.jpg",
-    "postImage": "https://i.pinimg.com/236x/7e/fd/64/7efd641894324d61f437022eeda1dbff.jpg",
-    "postTitle": "누물사?",
-    "date": "2024-02-28 17:55:10",
-    "postContents": "#누물사 #누구물어본사람 #누궁사 #누구궁금한사람 #그손그대로 #자기뺨내리쳐 #투머치인포 #TMI #안물안궁 #안물어봤음 #안궁금함 #누가물어봤냐 #물어본사람_존나한심 #아봉 #아가리봉인 #누물사 #누구물어본사람 #누궁사 #누구궁금한사람 #그손그대로 #자기뺨내리쳐 #투머치인포 #TMI #안물안궁 #안물어봤음 #안궁금함 #누가물어봤냐 ​.",
-    "views": 70,
-    "likes": 18,
-    "comments": [
-      {
         "commentId": 1,
-        "commentText": "저요 저요 저요 저요",
-        "commenter": "urwdjfn",
-        "commenterImage": "https://randomuser.me/api/portraits/men/8.jpg",
-        "commentDate": "2024-02-28 17:55:10"
+        "commenterId": 4,
+        "commentText": "로또번호 알려주세요",
+        "commentDate": "2024-01-20 08:30:15"
       },
       {
         "commentId": 2,
-        "commentText": "웅성👥👤👥뭐야..👤👥👥👤👥👥👤👥 👤👥👥👥👤👥👤👥👤 뭐야..👥👤👥👤👥👥👤👥👤👥👤👥👤👥👤👥👤👥👥 뭐야..",
-        "commenter": "쩝쩝박사",
-        "commenterImage": "https://randomuser.me/api/portraits/men/15.jpg",
-        "commentDate": "2024-02-28 17:55:10"
+        "commenterId": 5,
+        "commentText": "다들 기상!!!!! ⏰⚡️⏰⚡️⏰⚡️⏰⚡️⏰⚡️⏰⚡️ ⏰⚡️⏰⚡️⏰⚡️⏰⚡️⏰⚡️⏰⚡️ 🔊 빠빠빠😄- 빠-? 빠 ?빠빠빠빠?‼- 🌝굿모닝🌞 빠빠빠 뷰티풀↗📣데이 ?",
+        "commentDate": "2024-01-20 08:30:15"
       },
       {
         "commentId": 3,
-        "commentText": "우와 귀엽ㄷ ㅏ....",
-        "commenter": "보랏빛장미",
-        "commenterImage": "https://randomuser.me/api/portraits/women/19.jpg",
-        "commentDate": "2024-02-28 17:55:10"
+        "commenterId": 6,
+        "commentText": "지당한 말씀이십니다.",
+        "commentDate": "2024-01-20 08:30:15"
       }
     ]
   },
   "7": {
+    "authorId": "4",
     "author": "user4",
-    "authorImage": "https://randomuser.me/api/portraits/women/40.jpg",
-    "postImage": "https://mblogthumb-phinf.pstatic.net/20140202_227/5yellowrain_1391275398229N8DsR_JPEG/1361744C4E3D683017D55A-20130520031230.jpeg?type=w420",
+    "authorImage": "https://randomuser.me/api/portraits/women/16.jpg",
+    "postImage": "https://mblogthumb-phinf.pstatic.net/MjAyMjA1MTRfMjgy/MDAxNjUyNDgwMjQwODY1.JLQRpIMskHW7RozetrrJxmwphnl-B7bqVBddgBT0F2cg.4D0BxBP8-BPmoG30FYkqCdjvThaWRtunLIilkCWP-psg.JPEG.moonz/quokka%EF%BC%8Dmax%EF%BC%8Dwaugh.jpg?type=w800",
     "postTitle": "Don't Look Back In Anger (Oasis)",
     "date": "2024-02-28 17:55:10",
     "postContents": "엥...먼말이야? What do you mean? どういう意味ですか？ 是什么意思啊？ 你说的是什么呀? Qu'est-ce que tu racontes ? Cosa vuol dire? ¿Qué quieres decir? Ça suffit ? Wat heescht dat? 엥...먼말이야? What do you mean? どういう意味ですか？ 是什么意思啊？ 你说的是什么呀?  엥...먼말이야? What do you mean? どういう意味ですか？ 是什么意思啊？ 你说的是什么呀? Qu'est-ce que tu racontes ? Cosa vuol dire? ¿Qué quieres decir? Ça suffit ? Wat heescht dat? 엥...먼말이야? What do you mean? どういう意味ですか？ 是什么意思啊？ 你说的是什么呀? .",
-    "views": 123333333,
+    "views": 123333337,
     "likes": 200,
     "comments": [
       {
-        "commentId": 6,
+        "commentId": 1,
+        "commenterId": 6,
         "commentText": "얘야, 인생이란 원래 자기 생각대로 되지 않는 법이란다",
-        "commenter": "GyochonChicken",
-        "commenterImage": "https://randomuser.me/api/portraits/men/6.jpg",
         "commentDate": "2024-03-10 10:45:20"
       },
       {
-        "commentId": 7,
+        "commentId": 2,
+        "commenterId": 7,
         "commentText": "공감합니다. 공감합니다.",
-        "commenter": "아이언소울",
-        "commenterImage": "https://randomuser.me/api/portraits/men/8.jpg",
         "commentDate": "2024-02-28 17:55:10"
       },
       {
-        "commentId": 8,
+        "commentId": 3,
+        "commenterId": 8,
         "commentText": "달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고 달디달고",
-        "commenter": "익명",
-        "commenterImage": "https://randomuser.me/api/portraits/women/12.jpg",
         "commentDate": "2024-02-28 17:55:10"
       }
     ]

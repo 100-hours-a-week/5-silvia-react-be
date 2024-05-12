@@ -1,48 +1,226 @@
 const express = require('express');
-const session = require('express-session');
-const cors = require('cors');
-const path = require('path');
 const fs = require('fs');
-const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
+const path = require('path');
 const axios = require('axios');
+const multer = require('multer');
 
 const router = express.Router();
 const accountsFilePath = path.join(__dirname, '../models/accounts.json');
+const postsFilePath = path.join(__dirname, '../models/posts.json');
+
+// Set up multer for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    }
+});
+const upload = multer({ storage });
+
+// Ensure the uploads directory exists
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads');
+}
 
 // Middleware settings
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
-router.use(bodyParser.json());
-router.use(cookieParser());
-
-// CORS settings
-router.use(cors({
+router.use(require('body-parser').json());
+router.use(require('cookie-parser')());
+router.use(require('cors')({
     origin: 'http://localhost:3000',
     credentials: true
 }));
-
-// Session settings
-router.use(session({
+router.use(require('express-session')({
     secret: 'password486',
     resave: false,
     saveUninitialized: true,
     cookie: {
-        sameSite: 'None',
-        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict',
+        secure: false,
         maxAge: 1000 * 60 * 60
     }
 }));
 
 // Fetch account information
 router.get('/api/accounts', (req, res) => {
+    fs.readFile(accountsFilePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading accounts file:', err);
+            return res.status(500).send('Server error');
+        }
+        try {
+            const accounts = JSON.parse(data);
+            res.json(accounts);
+        } catch (error) {
+            console.error('Error parsing accounts file:', error.message, '\nFile content:', data);
+            res.status(500).send('File parsing error');
+        }
+    });
+});
+// Fetch account information by userId
+router.get('/api/accounts/:userId', (req, res) => {
+    const userId = req.params.userId;
+    fs.readFile(accountsFilePath, (err, data) => {
+        if (err) {
+            console.error('Error reading accounts file:', err);
+            return res.status(500).send('Server error');
+        }
+        try {
+            const accounts = JSON.parse(data);
+            const user = accounts.users.find(user => user.userId === userId);
+            if (!user) {
+                return res.status(404).send('User not found');
+            }
+            res.json({ user });
+        } catch (error) {
+            console.error('Error parsing accounts file:', error, data.toString());
+            res.status(500).send('File parsing error');
+        }
+    });
+});
+
+// Delete an account by userId and associated posts
+router.delete('/api/accounts/:userId', (req, res) => {
+    const userId = req.params.userId;
+
+    // Read accounts data
+    fs.readFile(accountsFilePath, (err, data) => {
+        if (err) {
+            console.error('Error reading accounts file:', err);
+            return res.status(500).send('Server error');
+        }
+        try {
+            const accounts = JSON.parse(data);
+            const userIndex = accounts.users.findIndex(user => user.userId === userId);
+            if (userIndex === -1) {
+                return res.status(404).send('User not found');
+            }
+            accounts.users.splice(userIndex, 1);
+
+            // Write updated accounts data
+            fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), (err) => {
+                if (err) {
+                    console.error('Error writing accounts file:', err);
+                    return res.status(500).send('Server error');
+                }
+
+                // Read posts data
+                fs.readFile(postsFilePath, (err, postData) => {
+                    if (err) {
+                        console.error('Error reading posts file:', err);
+                        return res.status(500).send('Server error');
+                    }
+                    try {
+                        const posts = JSON.parse(postData);
+                        if (!Array.isArray(posts)) {
+                            throw new Error('Posts data is not an array');
+                        }
+                        const updatedPosts = posts.filter(post => post.authorId !== userId);
+
+                        // Write updated posts data
+                        fs.writeFile(postsFilePath, JSON.stringify(updatedPosts, null, 2), (err) => {
+                            if (err) {
+                                console.error('Error writing posts file:', err);
+                                return res.status(500).send('Server error');
+                            }
+
+                            // Clear cookies after deleting user
+                            res.clearCookie('isLogined', {
+                                httpOnly: false,
+                                secure: process.env.NODE_ENV === 'production',
+                                sameSite: 'None'
+                            });
+                            res.clearCookie('userId', {
+                                httpOnly: false,
+                                secure: process.env.NODE_ENV === 'production',
+                                sameSite: 'None'
+                            });
+
+                            return res.status(200).send('User and associated posts deleted successfully');
+                        });
+                    } catch (error) {
+                        console.error('Error parsing posts file:', error, postData.toString());
+                        return res.status(500).send('File parsing error');
+                    }
+                });
+            });
+        } catch (error) {
+            console.error('Error parsing accounts file:', error, data.toString());
+            return res.status(500).send('File parsing error');
+        }
+    });
+});
+
+// Update nickname
+router.put('/api/accounts/:userId/nickname', (req, res) => {
+    const userId = req.params.userId;
+    const { nickname } = req.body;
+
+    if (!nickname) {
+        return res.status(400).send('Nickname is required');
+    }
+
     fs.readFile(accountsFilePath, (err, data) => {
         if (err) {
             return res.status(500).send('Server error');
         }
         try {
             const accounts = JSON.parse(data);
-            res.json(accounts);
+            const userIndex = accounts.users.findIndex(user => user.userId === userId);
+
+            if (userIndex === -1) {
+                return res.status(404).send('User not found');
+            }
+
+            const isNicknameTaken = accounts.users.some(user => user.nickname === nickname && user.userId !== userId);
+            if (isNicknameTaken) {
+                return res.status(409).send('중복된 닉네임입니다.');
+            }
+
+            accounts.users[userIndex].nickname = nickname;
+            fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), (err) => {
+                if (err) {
+                    return res.status(500).send('Server error');
+                }
+                res.status(200).send('닉네임이 변경되었습니다.');
+            });
+        } catch (error) {
+            res.status(500).send('File parsing error');
+        }
+    });
+});
+
+// Update password
+router.put('/api/accounts/:userId/password', (req, res) => {
+    const userId = req.params.userId;
+    const { password } = req.body;
+
+    if (!password) {
+        return res.status(400).send('Password is required');
+    }
+
+    fs.readFile(accountsFilePath, (err, data) => {
+        if (err) {
+            return res.status(500).send('Server error');
+        }
+        try {
+            const accounts = JSON.parse(data);
+            const userIndex = accounts.users.findIndex(user => user.userId === userId);
+
+            if (userIndex === -1) {
+                return res.status(404).send('User not found');
+            }
+
+            accounts.users[userIndex].password = password; // Update the password
+            fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), (err) => {
+                if (err) {
+                    return res.status(500).send('Server error');
+                }
+                res.status(200).send('Password updated successfully');
+            });
         } catch (error) {
             res.status(500).send('File parsing error');
         }
@@ -51,9 +229,9 @@ router.get('/api/accounts', (req, res) => {
 
 // Register a new user
 router.post('/api/register', (req, res) => {
-    const { nickname, email, password } = req.body;
+    const { nickname, email, password, profileimg } = req.body;
 
-    if (!nickname || !email || !password) {
+    if (!nickname || !email || !password || !profileimg) {
         return res.status(400).send('All fields are required');
     }
 
@@ -69,7 +247,27 @@ router.post('/api/register', (req, res) => {
                 return res.status(409).send('Duplicate email');
             }
 
-            accounts.users.push({ nickname, email, password });
+            // Determine the highest current userId
+            let maxUserId = 0;
+            accounts.users.forEach(user => {
+                if (user.userId) {
+                    const userId = parseInt(user.userId, 10);
+                    if (userId > maxUserId) {
+                        maxUserId = userId;
+                    }
+                }
+            });
+
+            // Assign new userId
+            const newUserId = maxUserId + 1;
+
+            accounts.users.push({
+                userId: newUserId.toString(),
+                nickname,
+                email,
+                password,
+                profileimg // Use the profile image URL provided by the user
+            });
 
             fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), (err) => {
                 if (err) {
@@ -82,6 +280,7 @@ router.post('/api/register', (req, res) => {
         }
     });
 });
+
 
 // Login
 router.post('/login', (req, res) => {
@@ -107,14 +306,16 @@ router.post('/login', (req, res) => {
 
                     res.cookie('isLogined', true, {
                         httpOnly: false,
-                        secure: false, // process.env.NODE_ENV === 'production',
-                        sameSite: 'None'
+                        secure: false,
+                        sameSite: 'Strict',
+                        maxAge: 1000 * 60 * 60 // 1 hour
                     });
 
-                    res.cookie('userNickname', foundUser.nickname, {
+                    res.cookie('userId', foundUser.userId, {
                         httpOnly: false,
-                        secure: false, // process.env.NODE_ENV === 'production',
-                        sameSite: 'None'
+                        secure: false,
+                        sameSite: 'Strict',
+                        maxAge: 1000 * 60 * 60 // 1 hour
                     });
 
                     return res.status(200).send('Login successful');
@@ -133,17 +334,53 @@ router.post('/login', (req, res) => {
     }
 });
 
+// Update profile image URL
+router.put('/api/accounts/:userId/profileimg', (req, res) => {
+    const userId = req.params.userId;
+    const { profileimg } = req.body;
+
+    if (!profileimg) {
+        return res.status(400).send('Profile image URL is required');
+    }
+
+    fs.readFile(accountsFilePath, (err, data) => {
+        if (err) {
+            return res.status(500).send('Server error');
+        }
+        try {
+            const accounts = JSON.parse(data);
+            const userIndex = accounts.users.findIndex(user => user.userId === userId);
+
+            if (userIndex === -1) {
+                return res.status(404).send('User not found');
+            }
+
+            accounts.users[userIndex].profileimg = profileimg;
+            fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), (err) => {
+                if (err) {
+                    return res.status(500).send('Server error');
+                }
+                res.status(200).send('Profile image updated successfully');
+            });
+        } catch (error) {
+            res.status(500).send('File parsing error');
+        }
+    });
+});
+
 // Logout
 router.post('/logout', (req, res) => {
     res.clearCookie('isLogined', {
         httpOnly: false,
-        secure: false, // process.env.NODE_ENV === 'production',
-        sameSite: 'None'
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'None',
+        path: '/'
     });
-    res.clearCookie('userNickname', {
-        httpOnly: false, // Should be accessible via JavaScript
-        secure: false, // process.env.NODE_ENV === 'production',
-        sameSite: 'None'
+    res.clearCookie('userId', {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'None',
+        path: '/'
     });
     res.status(200).send('Logout successful');
 });
