@@ -8,6 +8,36 @@ const router = express.Router();
 const accountsFilePath = path.join(__dirname, '../models/accounts.json');
 const postsFilePath = path.join(__dirname, '../models/posts.json');
 
+// Helper function to read JSON file and parse it
+const readJsonFile = (filePath) => {
+    return new Promise((resolve, reject) => {
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                return reject(`Error reading file: ${filePath}, Error: ${err.message}`);
+            }
+            try {
+                const parsedData = JSON.parse(data);
+                resolve(parsedData);
+            } catch (parseError) {
+                reject(`Error parsing JSON file: ${filePath}, Error: ${parseError.message}, Data: ${data}`);
+            }
+        });
+    });
+};
+
+// Helper function to write JSON data to file
+const writeJsonFile = (filePath, data) => {
+    return new Promise((resolve, reject) => {
+        fs.writeFile(filePath, JSON.stringify(data, null, 2), (err) => {
+            if (err) {
+                return reject(`Error writing file: ${filePath}, Error: ${err.message}`);
+            }
+            resolve();
+        });
+    });
+};
+
+
 // Set up multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -83,76 +113,141 @@ router.get('/api/accounts/:userId', (req, res) => {
 });
 
 // Delete an account by userId and associated posts
-router.delete('/api/accounts/:userId', (req, res) => {
+// router.delete('/api/accounts/:userId', (req, res) => {
+//     const userId = req.params.userId;
+//
+//     // Read accounts data
+//     fs.readFile(accountsFilePath, (err, data) => {
+//         if (err) {
+//             console.error('Error reading accounts file:', err);
+//             return res.status(500).send('Server error');
+//         }
+//         try {
+//             const accounts = JSON.parse(data);
+//             const userIndex = accounts.users.findIndex(user => user.userId === userId);
+//             if (userIndex === -1) {
+//                 return res.status(404).send('User not found');
+//             }
+//             accounts.users.splice(userIndex, 1);
+//
+//             // Write updated accounts data
+//             fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), (err) => {
+//                 if (err) {
+//                     console.error('Error writing accounts file:', err);
+//                     return res.status(500).send('Server error');
+//                 }
+//
+//                 // Read posts data
+//                 fs.readFile(postsFilePath, (err, postData) => {
+//                     if (err) {
+//                         console.error('Error reading posts file:', err);
+//                         return res.status(500).send('Server error');
+//                     }
+//                     try {
+//                         const posts = JSON.parse(postData);
+//                         if (typeof posts !== 'object' || posts === null) {
+//                             throw new Error('Posts data is not a valid object');
+//                         }
+//                         for (const postId in posts) {
+//                             if (posts[postId].authorId === userId) {
+//                                 delete posts[postId];
+//                             }
+//                         }
+//
+//                         // Write updated posts data
+//                         fs.writeFile(postsFilePath, JSON.stringify(posts, null, 2), (err) => {
+//                             if (err) {
+//                                 console.error('Error writing posts file:', err);
+//                                 return res.status(500).send('Server error');
+//                             }
+//
+//                             // Clear cookies after deleting user
+//                             res.clearCookie('isLogined', {
+//                                 httpOnly: false,
+//                                 secure: process.env.NODE_ENV === 'production',
+//                                 sameSite: 'None'
+//                             });
+//                             res.clearCookie('userId', {
+//                                 httpOnly: false,
+//                                 secure: process.env.NODE_ENV === 'production',
+//                                 sameSite: 'None'
+//                             });
+//
+//                             return res.status(200).send('User and associated posts deleted successfully');
+//                         });
+//                     } catch (error) {
+//                         console.error('Error parsing posts file:', error, postData.toString());
+//                         return res.status(500).send('File parsing error');
+//                     }
+//                 });
+//             });
+//         } catch (error) {
+//             console.error('Error parsing accounts file:', error, data.toString());
+//             return res.status(500).send('File parsing error');
+//         }
+//     });
+// });
+
+// Delete an account by userId and associated posts
+router.delete('/api/accounts/:userId', async (req, res) => {
     const userId = req.params.userId;
 
-    // Read accounts data
-    fs.readFile(accountsFilePath, (err, data) => {
-        if (err) {
-            console.error('Error reading accounts file:', err);
-            return res.status(500).send('Server error');
+    try {
+        // Read and parse accounts data
+        console.log(`Reading accounts from ${accountsFilePath}`);
+        const accounts = await readJsonFile(accountsFilePath);
+        const userIndex = accounts.users.findIndex(user => user.userId === userId);
+
+        if (userIndex === -1) {
+            console.log(`User with userId ${userId} not found`);
+            return res.status(404).send('User not found');
         }
-        try {
-            const accounts = JSON.parse(data);
-            const userIndex = accounts.users.findIndex(user => user.userId === userId);
-            if (userIndex === -1) {
-                return res.status(404).send('User not found');
+
+        // Remove user from accounts
+        console.log(`Removing user with userId ${userId}`);
+        accounts.users.splice(userIndex, 1);
+        await writeJsonFile(accountsFilePath, accounts);
+
+        // Read and parse posts data
+        console.log(`Reading posts from ${postsFilePath}`);
+        const posts = await readJsonFile(postsFilePath);
+
+        if (typeof posts !== 'object' || posts === null) {
+            throw new Error('Posts data is not a valid object');
+        }
+
+        // Remove posts associated with the user
+        console.log(`Removing posts associated with userId ${userId}`);
+        for (const postId in posts) {
+            if (posts[postId].authorId === userId) {
+                delete posts[postId];
             }
-            accounts.users.splice(userIndex, 1);
-
-            // Write updated accounts data
-            fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), (err) => {
-                if (err) {
-                    console.error('Error writing accounts file:', err);
-                    return res.status(500).send('Server error');
-                }
-
-                // Read posts data
-                fs.readFile(postsFilePath, (err, postData) => {
-                    if (err) {
-                        console.error('Error reading posts file:', err);
-                        return res.status(500).send('Server error');
-                    }
-                    try {
-                        const posts = JSON.parse(postData);
-                        if (!Array.isArray(posts)) {
-                            throw new Error('Posts data is not an array');
-                        }
-                        const updatedPosts = posts.filter(post => post.authorId !== userId);
-
-                        // Write updated posts data
-                        fs.writeFile(postsFilePath, JSON.stringify(updatedPosts, null, 2), (err) => {
-                            if (err) {
-                                console.error('Error writing posts file:', err);
-                                return res.status(500).send('Server error');
-                            }
-
-                            // Clear cookies after deleting user
-                            res.clearCookie('isLogined', {
-                                httpOnly: false,
-                                secure: process.env.NODE_ENV === 'production',
-                                sameSite: 'None'
-                            });
-                            res.clearCookie('userId', {
-                                httpOnly: false,
-                                secure: process.env.NODE_ENV === 'production',
-                                sameSite: 'None'
-                            });
-
-                            return res.status(200).send('User and associated posts deleted successfully');
-                        });
-                    } catch (error) {
-                        console.error('Error parsing posts file:', error, postData.toString());
-                        return res.status(500).send('File parsing error');
-                    }
-                });
-            });
-        } catch (error) {
-            console.error('Error parsing accounts file:', error, data.toString());
-            return res.status(500).send('File parsing error');
         }
-    });
+
+        await writeJsonFile(postsFilePath, posts);
+
+        // Clear cookies after deleting user
+        res.clearCookie('isLogined', {
+            httpOnly: false,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'None'
+        });
+
+        res.clearCookie('userId', {
+            httpOnly: false,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'None'
+        });
+
+        console.log(`User and associated posts deleted successfully for userId ${userId}`);
+        res.status(200).send('User and associated posts deleted successfully');
+    } catch (error) {
+        console.error('Error processing request:', error);
+        res.status(500).send(error.message);
+    }
 });
+
+
 
 // Update nickname
 router.put('/api/accounts/:userId/nickname', (req, res) => {

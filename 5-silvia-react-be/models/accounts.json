@@ -40,14 +40,7 @@
       "nickname": "user6",
       "email": "user6@gmail.com",
       "password": "Aaaa1234!!",
-      "profileimg": "https://randomuser.me/api/portraits/men/2.jpg"
-    },
-    {
-      "userId": "7",
-      "nickname": "신규회원",
-      "email": "new@gmail.com",
-      "password": "Aaa123!!",
-      "profileimg": "https://randomuser.me/api/portraits/women/16.jpg"
+      "profileimg": "https://randomuser.me/api/portraits/women/15.jpg"
     }
   ]
 }

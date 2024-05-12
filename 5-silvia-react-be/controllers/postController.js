@@ -39,6 +39,8 @@ const writePostsFile = (posts) => {
     });
 };
 
+
+
 // 게시물 api
 postController.get('/api/posts', async (req, res) => {
     try {
@@ -186,6 +188,41 @@ postController.put('/api/posts/:postId', async (req, res) => {
     }
 });
 
+// 게시글 작성
+postController.post('/api/posts', async (req, res) => {
+    const { postTitle, postContents, postImage } = req.body;
+    const authorId = req.cookies.userId;
+
+    if (!authorId) {
+        return res.status(401).send('로그인이 필요합니다.');
+    }
+
+    try {
+        let posts = await readPostsFile();
+        const newPostId = Object.keys(posts).length ? Math.max(...Object.keys(posts).map(Number)) + 1 : 1;
+
+        const newPost = {
+            postId: newPostId.toString(),
+            postTitle,
+            postContents,
+            postImage,
+            authorId,
+            date: new Date().toISOString(),
+            views: 0,
+            comments: []
+        };
+
+        posts[newPostId] = newPost;
+        await writePostsFile(posts);
+
+        res.status(201).send('게시글이 생성되었습니다.');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('게시글 생성 중 오류가 발생했습니다.');
+    }
+});
+
+
 
 // session api
 postController.get('/session', function (req, res, next) {
@@ -199,22 +236,6 @@ postController.get('/session', function (req, res, next) {
     }
 });
 
-// 게시글 추가 (예시로 구현)
-postController.post('/api/posts', async (req, res) => {
-    const { postTitle, postContents, authorId } = req.body;
-
-    try {
-        const posts = await readPostsFile();
-        const newPostId = Object.keys(posts).length + 1; // 새로운 postId 생성
-        posts[newPostId] = { postTitle, postContents, authorId, comments: [], views: 0 };
-
-        await writePostsFile(posts);
-        res.status(201).send('게시글이 추가되었습니다.');
-    } catch (error) {
-        console.error(error);
-        res.status(500).send(error);
-    }
-});
 
 //조회수
 postController.put('/api/posts/:postId/views', async (req, res) => {
@@ -268,6 +289,8 @@ postController.get('/api/posts/:postId/comments/:commentId', (req, res) => {
         }
     });
 });
+
+
 
 // 댓글 삭제
 postController.delete('/api/posts/:postId/comments/:commentId', (req, res) => {
