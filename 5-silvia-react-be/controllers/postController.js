@@ -1,13 +1,16 @@
 const express = require('express');
 const path = require('path');
+const bodyParser = require('body-parser');
 const fs = require('fs');
 const postController = express.Router();
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 
 const postsFilePath = path.join(__dirname, '../models/posts.json');
+
 postController.use(cookieParser());
 postController.use(helmet());
+postController.use(bodyParser.json());
 
 const readPostsFile = () => {
     return new Promise((resolve, reject) => {
@@ -55,6 +58,38 @@ const formatDate = (date) => {
 
 
 
+const updateComment = async (req, res) => {
+    const { postId, commentId } = req.params;
+    const { commentText } = req.body;
+
+    try {
+        const posts = await readPostsFile();
+
+        // Ensure posts is an array
+        if (!Array.isArray(posts)) {
+            throw new TypeError('Posts data is not an array');
+        }
+
+        const post = posts.find(p => p.id === parseInt(postId));
+        if (!post) {
+            return res.status(404).send('Post not found');
+        }
+
+        const comment = post.comments.find(c => c.commentId === parseInt(commentId));
+        if (!comment) {
+            return res.status(404).send('Comment not found');
+        }
+
+        comment.commentText = commentText;
+
+        await writePostsFile(posts);
+
+        res.status(200).json(comment);
+    } catch (error) {
+        console.error('Error parsing posts file:', error);
+        res.status(500).send('Internal Server Error');
+    }
+};
 
 // 게시물 api
 postController.get('/api/posts', async (req, res) => {
@@ -100,26 +135,6 @@ postController.get('/api/posts/:postId/comments', async (req, res) => {
     }
 });
 
-// 댓글 id별 api
-postController.get('/api/posts/:postId/comments/:commentId', async (req, res) => {
-    const postId = req.params.postId;
-    const commentId = req.params.commentId;
-    try {
-        const posts = await readPostsFile();
-        const post = posts[postId];
-        if (!post) {
-            return res.status(404).send('포스트를 찾을 수 없음');
-        }
-        const comment = post.comments.find(comment => comment.commentId === parseInt(commentId));
-        if (!comment) {
-            return res.status(404).send('댓글을 찾을 수 없음');
-        }
-        res.json(comment);
-    } catch (error) {
-        console.error(error);
-        res.status(500).send(error);
-    }
-});
 
 // 게시글 삭제
 postController.delete('/api/posts/:postId', async (req, res) => {
@@ -285,78 +300,103 @@ postController.put('/api/posts/:postId/views', async (req, res) => {
     }
 });
 
-//댓글 api
-postController.get('/api/posts/:postId/comments/:commentId', (req, res) => {
-    const { postId, commentId } = req.params;
-
-    fs.readFile(postsFilePath, (err, data) => {
-        if (err) {
-            console.error('Error reading posts file:', err);
-            return res.status(500).send('Server error');
+// 댓글 api
+postController.get('/api/posts/:postId/comments/:commentId', async (req, res) => {
+    const postId = req.params.postId;
+    const commentId = parseInt(req.params.commentId, 10);
+    try {
+        const posts = await readPostsFile();
+        const post = posts[postId];
+        if (!post) {
+            return res.status(404).send('포스트를 찾을 수 없음');
         }
-        try {
-            const posts = JSON.parse(data);
-            const post = posts.find(post => post.postId === postId);
-
-            if (!post) {
-                return res.status(404).send('Post not found');
-            }
-
-            const comment = post.comments.find(comment => comment.commentId === commentId);
-
-            if (!comment) {
-                return res.status(404).send('Comment not found');
-            }
-
-            res.json({ comment });
-        } catch (error) {
-            console.error('Error parsing posts file:', error);
-            res.status(500).send('File parsing error');
+        const comment = post.comments.find(comment => comment.commentId === commentId);
+        if (!comment) {
+            return res.status(404).send('댓글을 찾을 수 없음');
         }
-    });
+        res.json(comment);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(error);
+    }
 });
 
+
+
+// 댓글 수정
+postController.put('/api/posts/:postId/comments/:commentId', async (req, res) => {
+    const postId = req.params.postId;
+    const commentId = parseInt(req.params.commentId, 10);
+    const { commentText } = req.body;
+    try {
+        const posts = await readPostsFile();
+        const post = posts[postId];
+        if (!post) {
+            return res.status(404).send('포스트를 찾을 수 없음');
+        }
+        const commentIndex = post.comments.findIndex(comment => comment.commentId === commentId);
+        if (commentIndex === -1) {
+            return res.status(404).send('댓글을 찾을 수 없음');
+        }
+        post.comments[commentIndex].commentText = commentText;
+        await writePostsFile(posts);
+        res.json(post.comments[commentIndex]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(error);
+    }
+});
 
 
 // 댓글 삭제
-postController.delete('/api/posts/:postId/comments/:commentId', (req, res) => {
-    const { postId, commentId } = req.params;
-
-    fs.readFile(postsFilePath, (err, data) => {
-        if (err) {
-            console.error('Error reading posts file:', err);
-            return res.status(500).send('Server error');
+postController.delete('/api/posts/:postId/comments/:commentId', async (req, res) => {
+    const postId = req.params.postId;
+    const commentId = parseInt(req.params.commentId, 10);
+    try {
+        const posts = await readPostsFile();
+        const post = posts[postId];
+        if (!post) {
+            return res.status(404).send('포스트를 찾을 수 없음');
         }
-        try {
-            const posts = JSON.parse(data);
-            const postIndex = posts.findIndex(post => post.postId === postId);
-
-            if (postIndex === -1) {
-                return res.status(404).send('Post not found');
-            }
-
-            const comments = posts[postIndex].comments;
-            const commentIndex = comments.findIndex(comment => comment.commentId === commentId);
-
-            if (commentIndex === -1) {
-                return res.status(404).send('Comment not found');
-            }
-
-            comments.splice(commentIndex, 1);
-
-            fs.writeFile(postsFilePath, JSON.stringify(posts, null, 2), (err) => {
-                if (err) {
-                    console.error('Error writing posts file:', err);
-                    return res.status(500).send('Server error');
-                }
-                res.status(200).send('Comment deleted successfully');
-            });
-        } catch (error) {
-            console.error('Error parsing posts file:', error);
-            res.status(500).send('File parsing error');
+        const commentIndex = post.comments.findIndex(comment => comment.commentId === commentId);
+        if (commentIndex === -1) {
+            return res.status(404).send('댓글을 찾을 수 없음');
         }
-    });
+        post.comments.splice(commentIndex, 1);
+        await writePostsFile(posts);
+        res.status(200).send('댓글이 삭제되었습니다.');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(error);
+    }
 });
+
+// 댓글 작성
+postController.post('/api/posts/:postId/comments', async (req, res) => {
+    const postId = req.params.postId;
+    const { commentText, commenterId } = req.body;
+    try {
+        const posts = await readPostsFile();
+        const post = posts[postId];
+        if (!post) {
+            return res.status(404).send('포스트를 찾을 수 없음');
+        }
+        const newCommentId = post.comments.length ? Math.max(...post.comments.map(c => c.commentId)) + 1 : 1;
+        const newComment = {
+            commentId: newCommentId,
+            commentText,
+            commenterId,
+            commentDate: formatDate(new Date()),
+        };
+        post.comments.push(newComment);
+        await writePostsFile(posts);
+        res.status(201).json(newComment);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(error);
+    }
+});
+
 
 
 module.exports = postController;
