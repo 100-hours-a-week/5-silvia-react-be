@@ -39,6 +39,21 @@ const writePostsFile = (posts) => {
     });
 };
 
+// Function to format the date as 'YYYY-MM-DD HH:MM:SS'
+const formatDate = (date) => {
+    const pad = (n) => (n < 10 ? '0' + n : n);
+
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    const seconds = pad(date.getSeconds());
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
+
 
 
 // 게시물 api
@@ -207,8 +222,9 @@ postController.post('/api/posts', async (req, res) => {
             postContents,
             postImage,
             authorId,
-            date: new Date().toISOString(),
+            date: formatDate(new Date()), // Use the formatDate function here
             views: 0,
+            likes: 0,
             comments: []
         };
 
@@ -225,15 +241,25 @@ postController.post('/api/posts', async (req, res) => {
 
 
 // session api
-postController.get('/session', function (req, res, next) {
-    if (req.session.views) {
-        req.session.views++;
-        res.write('<p> No. of views: ' + req.session.views + '</p>');
-        res.end();
-    } else {
-        req.session.views = 1;
-        res.end(' New session is started');
+postController.get('/session', (req, res, next) => {
+    const now = Date.now();
+
+    if (!req.session.lastVisit || now - req.session.lastVisit > 1000) {
+        if (req.session.views) {
+            req.session.views++;
+        } else {
+            req.session.views = 1;
+        }
+        req.session.lastVisit = now;
     }
+
+    // Logging to help debug multiple requests
+    console.log('Session ID:', req.sessionID);
+    console.log('Views:', req.session.views);
+    console.log('Request URL:', req.url);
+
+    res.write('<p>No. of views: ' + req.session.views + '</p>');
+    res.end();
 });
 
 

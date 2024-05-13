@@ -25,6 +25,7 @@ const readJsonFile = (filePath) => {
     });
 };
 
+
 // Helper function to write JSON data to file
 const writeJsonFile = (filePath, data) => {
     return new Promise((resolve, reject) => {
@@ -188,6 +189,66 @@ router.get('/api/accounts/:userId', (req, res) => {
 //     });
 // });
 
+// // Delete an account by userId and associated posts
+// router.delete('/api/accounts/:userId', async (req, res) => {
+//     const userId = req.params.userId;
+//
+//     try {
+//         // Read and parse accounts data
+//         console.log(`Reading accounts from ${accountsFilePath}`);
+//         const accounts = await readJsonFile(accountsFilePath);
+//         const userIndex = accounts.users.findIndex(user => user.userId === userId);
+//
+//         if (userIndex === -1) {
+//             console.log(`User with userId ${userId} not found`);
+//             return res.status(404).send('User not found');
+//         }
+//
+//         // Remove user from accounts
+//         console.log(`Removing user with userId ${userId}`);
+//         accounts.users.splice(userIndex, 1);
+//         await writeJsonFile(accountsFilePath, accounts);
+//
+//         // Read and parse posts data
+//         console.log(`Reading posts from ${postsFilePath}`);
+//         const posts = await readJsonFile(postsFilePath);
+//
+//         if (typeof posts !== 'object' || posts === null) {
+//             throw new Error('Posts data is not a valid object');
+//         }
+//
+//         // Remove posts associated with the user
+//         console.log(`Removing posts associated with userId ${userId}`);
+//         for (const postId in posts) {
+//             if (posts[postId].authorId === userId) {
+//                 delete posts[postId];
+//             }
+//         }
+//
+//         await writeJsonFile(postsFilePath, posts);
+//
+//         // Clear cookies after deleting user
+//         res.clearCookie('isLogined', {
+//             httpOnly: false,
+//             secure: process.env.NODE_ENV === 'production',
+//             sameSite: 'None'
+//         });
+//
+//         res.clearCookie('userId', {
+//             httpOnly: false,
+//             secure: process.env.NODE_ENV === 'production',
+//             sameSite: 'None'
+//         });
+//
+//         console.log(`User and associated posts deleted successfully for userId ${userId}`);
+//         res.status(200).send('User and associated posts deleted successfully');
+//     } catch (error) {
+//         console.error('Error processing request:', error);
+//         res.status(500).send(error.message);
+//     }
+// });
+//
+
 // Delete an account by userId and associated posts
 router.delete('/api/accounts/:userId', async (req, res) => {
     const userId = req.params.userId;
@@ -196,6 +257,12 @@ router.delete('/api/accounts/:userId', async (req, res) => {
         // Read and parse accounts data
         console.log(`Reading accounts from ${accountsFilePath}`);
         const accounts = await readJsonFile(accountsFilePath);
+
+        if (!accounts || !Array.isArray(accounts.users)) {
+            console.error('Invalid accounts data format');
+            return res.status(500).send('Invalid accounts data format');
+        }
+
         const userIndex = accounts.users.findIndex(user => user.userId === userId);
 
         if (userIndex === -1) {
@@ -213,7 +280,8 @@ router.delete('/api/accounts/:userId', async (req, res) => {
         const posts = await readJsonFile(postsFilePath);
 
         if (typeof posts !== 'object' || posts === null) {
-            throw new Error('Posts data is not a valid object');
+            console.error('Posts data is not a valid object');
+            return res.status(500).send('Posts data is not a valid object');
         }
 
         // Remove posts associated with the user

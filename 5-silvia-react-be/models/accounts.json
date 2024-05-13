@@ -2,10 +2,10 @@
   "users": [
     {
       "userId": "1",
-      "nickname": "user1",
+      "nickname": "새로운닉네임",
       "email": "user1@gmail.com",
       "password": "Aaaa1234!!",
-      "profileimg": "https://randomuser.me/api/portraits/men/2.jpg"
+      "profileimg": "https://randomuser.me/api/portraits/women/19.jpg"
     },
     {
       "userId": "2",
@@ -19,7 +19,7 @@
       "nickname": "user3",
       "email": "user3@gmail.com",
       "password": "Aaaa1234!!",
-      "profileimg": "https://randomuser.me/api/portraits/men/14.jpg"
+      "profileimg": "https://randomuser.me/api/portraits/women/2.jpg"
     },
     {
       "userId": "4",
