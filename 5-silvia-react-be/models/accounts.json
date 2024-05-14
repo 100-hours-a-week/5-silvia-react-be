@@ -5,14 +5,14 @@
       "nickname": "user1",
       "email": "user1@gmail.com",
       "password": "Aaaa1234!!",
-      "profileimg": "https://randomuser.me/api/portraits/men/2.jpg"
+      "profileimg": "http://localhost:3001/uploads/1715661245216-20AC20AB-3542-48B1-AE8D-B85872A20495.jpeg"
     },
     {
       "userId": "2",
       "nickname": "user2",
       "email": "user2@gmail.com",
       "password": "Aaaa1234!!",
-      "profileimg": "https://randomuser.me/api/portraits/men/10.jpg"
+      "profileimg": "http://localhost:3001/uploads/1715651103015-Screenshot 2024-01-07 at 10.27.41â¯PM.png"
     },
     {
       "userId": "3",

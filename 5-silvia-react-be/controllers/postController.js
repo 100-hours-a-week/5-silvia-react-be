@@ -5,6 +5,7 @@ const fs = require('fs');
 const postController = express.Router();
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
+const multer = require("multer");
 
 const postsFilePath = path.join(__dirname, '../models/posts.json');
 
@@ -57,39 +58,23 @@ const formatDate = (date) => {
 };
 
 
-
-const updateComment = async (req, res) => {
-    const { postId, commentId } = req.params;
-    const { commentText } = req.body;
-
-    try {
-        const posts = await readPostsFile();
-
-        // Ensure posts is an array
-        if (!Array.isArray(posts)) {
-            throw new TypeError('Posts data is not an array');
-        }
-
-        const post = posts.find(p => p.id === parseInt(postId));
-        if (!post) {
-            return res.status(404).send('Post not found');
-        }
-
-        const comment = post.comments.find(c => c.commentId === parseInt(commentId));
-        if (!comment) {
-            return res.status(404).send('Comment not found');
-        }
-
-        comment.commentText = commentText;
-
-        await writePostsFile(posts);
-
-        res.status(200).json(comment);
-    } catch (error) {
-        console.error('Error parsing posts file:', error);
-        res.status(500).send('Internal Server Error');
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, './uploads')
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.fieldname + '-' + Date.now())
     }
-};
+});
+
+const upload = multer({ storage: storage });
+
+
+// Ensure the uploads directory exists
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads');
+}
+
 
 // 게시물 api
 postController.get('/api/posts', async (req, res) => {
@@ -253,6 +238,18 @@ postController.post('/api/posts', async (req, res) => {
     }
 });
 
+postController.post('/api/posts/image', upload.single('postImage'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).send('No file uploaded');
+    }
+    try {
+        const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        res.json({ postImage: imageUrl });
+    } catch (error) {
+        console.error('Error handling the file:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 
 // session api

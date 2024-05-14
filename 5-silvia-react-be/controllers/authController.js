@@ -4,6 +4,7 @@ const path = require('path');
 const axios = require('axios');
 const multer = require('multer');
 
+
 const router = express.Router();
 const accountsFilePath = path.join(__dirname, '../models/accounts.json');
 const postsFilePath = path.join(__dirname, '../models/posts.json');
@@ -39,16 +40,15 @@ const writeJsonFile = (filePath, data) => {
 };
 
 
-// Set up multer for file uploads
+// Setup storage engine
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
+    destination: './uploads',
     filename: (req, file, cb) => {
         cb(null, `${Date.now()}-${file.originalname}`);
     }
 });
-const upload = multer({ storage });
+const upload = multer({ storage: storage });
+
 
 // Ensure the uploads directory exists
 if (!fs.existsSync('uploads')) {
@@ -56,6 +56,7 @@ if (!fs.existsSync('uploads')) {
 }
 
 // Middleware settings
+router.use('/uploads', express.static('uploads'));
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 router.use(require('body-parser').json());
@@ -74,6 +75,8 @@ router.use(require('express-session')({
         maxAge: 1000 * 60 * 60
     }
 }));
+
+
 
 // Fetch account information
 router.get('/api/accounts', (req, res) => {
@@ -361,38 +364,44 @@ router.post('/login', (req, res) => {
     }
 });
 
-// Update profile image URL
-router.put('/api/accounts/:userId/profileimg', (req, res) => {
-    const userId = req.params.userId;
-    const { profileimg } = req.body;
+// Route to upload a profile image
+router.post('/api/accounts/:userId/profileimg', upload.single('profileimg'), (req, res) => {
+    if (req.file) {
+        const profileimg = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
 
-    if (!profileimg) {
-        return res.status(400).send('Profile image URL is required');
-    }
-
-    fs.readFile(accountsFilePath, (err, data) => {
-        if (err) {
-            return res.status(500).send('Server error');
-        }
-        try {
-            const accounts = JSON.parse(data);
-            const userIndex = accounts.users.findIndex(user => user.userId === userId);
-
-            if (userIndex === -1) {
-                return res.status(404).send('User not found');
+        fs.readFile(accountsFilePath, 'utf8', (err, data) => {
+            if (err) {
+                console.error('Error reading accounts file:', err);
+                return res.status(500).send('Server error');
             }
-
-            accounts.users[userIndex].profileimg = profileimg;
-            fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), (err) => {
-                if (err) {
-                    return res.status(500).send('Server error');
+            try {
+                const accounts = JSON.parse(data);
+                const user = accounts.users.find(user => user.userId === req.params.userId);
+                if (!user) {
+                    return res.status(404).send('User not found');
                 }
-                res.status(200).send('Profile image updated successfully');
-            });
-        } catch (error) {
-            res.status(500).send('File parsing error');
-        }
-    });
+
+                // Update the user's image URL in the dummy data
+                user.profileimg = profileimg;
+
+                // Write the updated accounts back to the file
+                fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), 'utf8', (err) => {
+                    if (err) {
+                        console.error('Error writing to accounts file:', err);
+                        return res.status(500).send('Server error during file write');
+                    }
+                    res.json({ profileimg: profileimg });
+                });
+
+            } catch (error) {
+                console.error('Error parsing accounts file:', error, data.toString());
+                res.status(500).send('File parsing error');
+            }
+        });
+
+    } else {
+        res.status(400).send('No file uploaded');
+    }
 });
 
 // Logout
