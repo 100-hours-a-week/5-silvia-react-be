@@ -5,14 +5,14 @@
       "nickname": "user1",
       "email": "user1@gmail.com",
       "password": "Aaaa1234!!",
-      "profileimg": "http://localhost:3001/uploads/1715661245216-20AC20AB-3542-48B1-AE8D-B85872A20495.jpeg"
+      "profileimg": "https://randomuser.me/api/portraits/men/2.jpg"
     },
     {
       "userId": "2",
       "nickname": "user2",
       "email": "user2@gmail.com",
       "password": "Aaaa1234!!",
-      "profileimg": "http://localhost:3001/uploads/1715651103015-Screenshot 2024-01-07 at 10.27.41â¯PM.png"
+      "profileimg": "https://randomuser.me/api/portraits/men/10.jpg"
     },
     {
       "userId": "3",
@@ -41,6 +41,34 @@
       "email": "user6@gmail.com",
       "password": "Aaaa1234!!",
       "profileimg": "https://randomuser.me/api/portraits/women/15.jpg"
+    },
+    {
+      "userId": "7",
+      "nickname": "aa",
+      "email": "user10@gmail.com",
+      "password": "Aaaa1234!!",
+      "profileimg": ""
+    },
+    {
+      "userId": "8",
+      "nickname": "asdfasdf",
+      "email": "user100@gmail.com",
+      "password": "Aaaa1234!!",
+      "profileimg": ""
+    },
+    {
+      "userId": "9",
+      "nickname": "sdasf",
+      "email": "123@gmail.com",
+      "password": "Aaaa1234!!",
+      "profileimg": ""
+    },
+    {
+      "userId": "10",
+      "nickname": "YourNickname",
+      "email": "user@example.com",
+      "password": "YourPassword123!",
+      "profileimg": "http://localhost:3001/uploads/1715749610198-IMG_6840.jpeg"
     }
   ]
 }

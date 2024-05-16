@@ -258,10 +258,64 @@ router.put('/api/accounts/:userId/password', (req, res) => {
 });
 
 // Register a new user
-router.post('/api/register', (req, res) => {
-    const { nickname, email, password, profileimg } = req.body;
+// router.post('/api/register', (req, res) => {
+//     const { nickname, email, password, profileimg: profileImageUrl  } = req.body;
+//
+//     if (!nickname || !email || !password || !profileimg) {
+//         return res.status(400).send('All fields are required');
+//     }
+//
+//     fs.readFile(accountsFilePath, (err, data) => {
+//         if (err) {
+//             return res.status(500).send('Server error');
+//         }
+//         try {
+//             const accounts = JSON.parse(data);
+//             const isDuplicate = accounts.users.some(user => user.email === email);
+//
+//             if (isDuplicate) {
+//                 return res.status(409).send('Duplicate email');
+//             }
+//
+//             // Determine the highest current userId
+//             let maxUserId = 0;
+//             accounts.users.forEach(user => {
+//                 if (user.userId) {
+//                     const userId = parseInt(user.userId, 10);
+//                     if (userId > maxUserId) {
+//                         maxUserId = userId;
+//                     }
+//                 }
+//             });
+//
+//             // Assign new userId
+//             const newUserId = maxUserId + 1;
+//
+//             accounts.users.push({
+//                 userId: newUserId.toString(),
+//                 nickname,
+//                 email,
+//                 password,
+//                 profileimg // Use the profile image URL provided by the user
+//             });
+//
+//             fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), (err) => {
+//                 if (err) {
+//                     return res.status(500).send('Error saving user');
+//                 }
+//                 res.status(201).send('User registered successfully');
+//             });
+//         } catch (error) {
+//             res.status(500).send('File parsing error');
+//         }
+//     });
+// });
 
-    if (!nickname || !email || !password || !profileimg) {
+router.post('/api/register', upload.single('profileimg'), (req, res) => {
+    const { nickname, email, password } = req.body;
+    const profileImageUrl = req.file ? `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}` : '';
+
+    if (!nickname || !email || !password) {
         return res.status(400).send('All fields are required');
     }
 
@@ -277,7 +331,6 @@ router.post('/api/register', (req, res) => {
                 return res.status(409).send('Duplicate email');
             }
 
-            // Determine the highest current userId
             let maxUserId = 0;
             accounts.users.forEach(user => {
                 if (user.userId) {
@@ -288,7 +341,6 @@ router.post('/api/register', (req, res) => {
                 }
             });
 
-            // Assign new userId
             const newUserId = maxUserId + 1;
 
             accounts.users.push({
@@ -296,7 +348,7 @@ router.post('/api/register', (req, res) => {
                 nickname,
                 email,
                 password,
-                profileimg // Use the profile image URL provided by the user
+                profileimg: profileImageUrl
             });
 
             fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), (err) => {
@@ -312,17 +364,59 @@ router.post('/api/register', (req, res) => {
 });
 
 
+// 회원가입할때 이미지...
+// router.post('/api/register/profileimg', upload.single('profileimg'), (req, res) => {
+//     if (req.file) {
+//         const profileimg = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+//
+//         fs.readFile(accountsFilePath, 'utf8', (err, data) => {
+//             if (err) {
+//                 console.error('Error reading accounts file:', err);
+//                 return res.status(500).send('Server error');
+//             }
+//             try {
+//                 const accounts = JSON.parse(data);
+//                 const user = accounts.users.find(user => user.userId === req.params.userId);
+//                 if (!user) {
+//                     return res.status(404).send('User not found');
+//                 }
+//
+//                 // Update the user's image URL in the dummy data
+//                 user.profileimg = profileimg;
+//
+//                 // Write the updated accounts back to the file
+//                 fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), 'utf8', (err) => {
+//                     if (err) {
+//                         console.error('Error writing to accounts file:', err);
+//                         return res.status(500).send('Server error during file write');
+//                     }
+//                     res.json({ profileimg: profileimg });
+//                 });
+//
+//             } catch (error) {
+//                 console.error('Error parsing accounts file:', error, data.toString());
+//                 res.status(500).send('File parsing error');
+//             }
+//         });
+//
+//     } else {
+//         res.status(400).send('No file uploaded');
+//     }
+// });
+
 // Login
 router.post('/login', (req, res) => {
     try {
         const { email, password } = req.body;
 
-        console.log('Received email:', email);
-        console.log('Received password:', password);
-
         axios.get('http://localhost:3001/api/accounts')
             .then(response => {
                 const users = response.data.users;
+
+                if (!users || !Array.isArray(users)) {
+                    console.error('No users found or data is not an array');
+                    return res.status(500).send('Internal Server Error: User data is not available or incorrect format');
+                }
 
                 let foundUser = null;
                 users.forEach(user => {
@@ -364,6 +458,7 @@ router.post('/login', (req, res) => {
     }
 });
 
+
 // Route to upload a profile image
 router.post('/api/accounts/:userId/profileimg', upload.single('profileimg'), (req, res) => {
     if (req.file) {
@@ -385,13 +480,6 @@ router.post('/api/accounts/:userId/profileimg', upload.single('profileimg'), (re
                 user.profileimg = profileimg;
 
                 // Write the updated accounts back to the file
-                fs.writeFile(accountsFilePath, JSON.stringify(accounts, null, 2), 'utf8', (err) => {
-                    if (err) {
-                        console.error('Error writing to accounts file:', err);
-                        return res.status(500).send('Server error during file write');
-                    }
-                    res.json({ profileimg: profileimg });
-                });
 
             } catch (error) {
                 console.error('Error parsing accounts file:', error, data.toString());
