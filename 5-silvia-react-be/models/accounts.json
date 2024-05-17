@@ -1,0 +1,53 @@
+{
+  "users": [
+    {
+      "userId": "1",
+      "nickname": "user1",
+      "email": "user1@gmail.com",
+      "password": "Aaaa1234!!",
+      "profileimg": "https://randomuser.me/api/portraits/men/2.jpg"
+    },
+    {
+      "userId": "2",
+      "nickname": "user2",
+      "email": "user2@gmail.com",
+      "password": "Aaaa1234!!",
+      "profileimg": "https://randomuser.me/api/portraits/men/10.jpg"
+    },
+    {
+      "userId": "3",
+      "nickname": "user3",
+      "email": "user3@gmail.com",
+      "password": "Aaaa1234!!",
+      "profileimg": "https://randomuser.me/api/portraits/men/14.jpg"
+    },
+    {
+      "userId": "4",
+      "nickname": "user4",
+      "email": "user4@gmail.com",
+      "password": "Aaaa1234!!",
+      "profileimg": "https://randomuser.me/api/portraits/women/16.jpg"
+    },
+    {
+      "userId": "5",
+      "nickname": "user5",
+      "email": "user5@gmail.com",
+      "password": "Aaaa1234!!",
+      "profileimg": "https://randomuser.me/api/portraits/women/3.jpg"
+    },
+    {
+      "userId": "6",
+      "nickname": "user6",
+      "email": "user6@gmail.com",
+      "password": "Aaaa1234!!",
+      "profileimg": "https://randomuser.me/api/portraits/women/15.jpg"
+    },
+    {
+      "userId": "7",
+      "nickname": "소라개",
+      "email": "new@gmail.com",
+      "password": "Aaaa123!!",
+      "profileimg": "http://localhost:3001/uploads/1715912299966-om35bo6l6126f36x839x copy.jpg"
+    }
+  ]
+}
