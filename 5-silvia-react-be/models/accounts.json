@@ -4,7 +4,7 @@
       "userId": "1",
       "nickname": "user1",
       "email": "user1@gmail.com",
-      "password": "Aaaa1234!!",
+      "password": "Aaaa1234!!!",
       "profileimg": "https://randomuser.me/api/portraits/men/2.jpg"
     },
     {
@@ -44,7 +44,7 @@
     },
     {
       "userId": "7",
-      "nickname": "소라개",
+      "nickname": "user7",
       "email": "new@gmail.com",
       "password": "Aaaa123!!",
       "profileimg": "http://localhost:3001/uploads/1715921587385-om35bo6l6126f36x839x copy.jpg"

@@ -347,22 +347,30 @@ router.post('/login', (req, res) => {
 
                 if (foundUser) {
                     const token = 'some-generated-token';
+                    const secureCookie = process.env.NODE_ENV === 'production';
 
                     res.cookie('isLogined', true, {
                         httpOnly: false,
-                        secure: false,
-                        sameSite: 'Strict',
+                        secure: secureCookie,
+                        sameSite: secureCookie ? 'None' : 'Strict',
                         maxAge: 1000 * 60 * 60 // 1 hour
                     });
 
                     res.cookie('userId', foundUser.userId, {
                         httpOnly: false,
-                        secure: false,
-                        sameSite: 'Strict',
+                        secure: secureCookie,
+                        sameSite: secureCookie ? 'None' : 'Strict',
                         maxAge: 1000 * 60 * 60 // 1 hour
                     });
 
-                    return res.status(200).send('Login successful');
+                    res.cookie('nickname', foundUser.nickname, {
+                        httpOnly: false,
+                        secure: secureCookie,
+                        sameSite: secureCookie ? 'None' : 'Strict',
+                        maxAge: 1000 * 60 * 60 // 1 hour
+                    });
+
+                    return res.status(200).json({ success: true, nickname: foundUser.nickname });
                 } else {
                     console.log('Invalid credentials provided');
                     return res.status(401).send('Invalid credentials');
@@ -377,6 +385,8 @@ router.post('/login', (req, res) => {
         return res.status(500).send('Internal Server Error');
     }
 });
+
+
 
 
 // Route to upload a profile image

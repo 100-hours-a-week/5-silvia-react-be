@@ -3,6 +3,7 @@ const cors = require('cors');
 const app = express();
 const port = 3001;
 const helmet = require('helmet');
+const db = require('./db');
 
 const corsOptions = {
   origin: ['http://localhost:3000', 'http://localhost:3001'],
