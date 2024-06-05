@@ -3,7 +3,6 @@ const cors = require('cors');
 const app = express();
 const port = 3001;
 const helmet = require('helmet');
-const db = require('./db');
 
 const corsOptions = {
   origin: ['http://localhost:3000', 'http://localhost:3001'],
@@ -13,6 +12,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.use(express.json());
 app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }));
 
 const authentication = require('./routes/auth');
@@ -27,3 +27,4 @@ app.listen(port, () => {
 });
 
 app.use(express.urlencoded({ extended: true }))
+

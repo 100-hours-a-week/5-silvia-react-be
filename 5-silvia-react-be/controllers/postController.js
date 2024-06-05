@@ -8,45 +8,13 @@ const cookieParser = require('cookie-parser');
 const multer = require("multer");
 const cors = require('cors');
 const helmet = require('helmet');
-
-
-const postsFilePath = path.join(__dirname, '../models/posts.json');
+const db = require('../db');  // db.js 파일을 불러옴
 
 postController.use('/uploads', express.static('uploads'));
 postController.use(cookieParser());
 postController.use(helmet());
 postController.use(bodyParser.json());
-postController.use(express.urlencoded({ extended: true }))
-
-const readPostsFile = () => {
-    return new Promise((resolve, reject) => {
-        fs.readFile(postsFilePath, 'utf-8', (err, data) => {
-            if (err) {
-                return reject('서버 오류');
-            }
-            try {
-                if (data.trim().length === 0) {
-                    resolve({});
-                } else {
-                    resolve(JSON.parse(data));
-                }
-            } catch (error) {
-                reject('파일 파싱 오류');
-            }
-        });
-    });
-};
-
-const writePostsFile = (posts) => {
-    return new Promise((resolve, reject) => {
-        fs.writeFile(postsFilePath, JSON.stringify(posts, null, 2), (err) => {
-            if (err) {
-                return reject('서버 오류');
-            }
-            resolve();
-        });
-    });
-};
+postController.use(express.urlencoded({ extended: true }));
 
 // Function to format the date as 'YYYY-MM-DD HH:MM:SS'
 const formatDate = (date) => {
@@ -71,97 +39,96 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-
 // Ensure the uploads directory exists
 if (!fs.existsSync('uploads')) {
     fs.mkdirSync('uploads');
 }
 
-postController.use(require('cors')({
+postController.use(cors({
     origin: 'http://localhost:3000',
     credentials: true
 }));
 postController.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }));
 
-//
-// postController.use(fileUpload({
-//     createParentPath: true,
-//     safeFileNames: true,
-//     preserveExtension: true
-// }));
-
-postController.use('/uploads', express.static('uploads', {
-    setHeaders: function (res, path, stat) {
-        res.set('Access-Control-Allow-Origin', 'http://localhost:3001');
-    }
-}));
-
-
 // 게시물 api
 postController.get('/api/posts', async (req, res) => {
     try {
-        const posts = await readPostsFile();
-        res.json(posts);
+        db.query('SELECT * FROM community_post', (err, results) => {
+            if (err) {
+                console.error('Database query error:', err);
+                res.status(500).send('Error querying the database');
+                return;
+            }
+            res.json(results);
+        });
     } catch (error) {
-        console.error(error);
+        console.error('Unexpected error:', error);
         res.status(500).send(error);
     }
 });
 
 // 게시물 id별 api
-postController.get('/api/posts/:postId', async (req, res) => {
+postController.get('/api/posts/:postId', (req, res) => {
     const postId = req.params.postId;
-    try {
-        const posts = await readPostsFile();
-        const post = posts[postId];
-        if (!post) {
-            return res.status(404).send('포스트를 찾을 수 없음');
+    const query = 'SELECT * FROM community_post WHERE id = ?';
+
+    db.query(query, [postId], (err, results) => {
+        if (err) {
+            console.error('Error querying the database:', err);
+            return res.status(500).send('Error querying the database');
         }
-        res.json(post);
-    } catch (error) {
-        console.error(error);
-        res.status(500).send(error);
-    }
+        if (results.length === 0) {
+            return res.status(404).send('Post not found');
+        }
+        res.json(results[0]);
+    });
 });
 
 // 댓글 api
 postController.get('/api/posts/:postId/comments', async (req, res) => {
     const postId = req.params.postId;
     try {
-        const posts = await readPostsFile();
-        const post = posts[postId];
-        if (!post) {
-            return res.status(404).send('포스트를 찾을 수 없음');
-        }
-        const comments = post.comments.filter(comment => comment !== null);
-        res.json(comments);
+        db.query('SELECT * FROM comments WHERE postId = ?', [postId], (err, results) => {
+            if (err) {
+                res.status(500).send('Error querying the database');
+                return;
+            }
+            res.json(results);
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send(error);
     }
 });
 
-
 // 게시글 삭제
 postController.delete('/api/posts/:postId', async (req, res) => {
     const postId = req.params.postId;
     try {
-        let posts = await readPostsFile();
-        const post = posts[postId];
-        if (!post) {
-            return res.status(404).send('포스트를 찾을 수 없음');
-        }
-
         const userIdCookie = req.cookies.userId;
-        const authorId = post.authorId;
 
-        if (userIdCookie !== authorId) {
-            return res.status(403).send('게시글 삭제 권한이 없습니다.');
-        }
-
-        delete posts[postId];
-        await writePostsFile(posts);
-        res.status(200).send('게시글이 삭제되었습니다.');
+        db.query('SELECT user_id FROM community_post WHERE id = ?', [postId], (err, results) => {
+            if (err) {
+                res.status(500).send('Error querying the database');
+                return;
+            }
+            if (results.length === 0) {
+                res.status(404).send('포스트를 찾을 수 없음');
+                return;
+            }
+            const authorId = results[0].user_id;
+            if (userIdCookie !== authorId.toString()) {
+                res.status(403).send('게시글 삭제 권한이 없습니다.');
+                return;
+            }
+            db.query('DELETE FROM community_post WHERE id = ?', [postId], (err) => {
+                if (err) {
+                    res.status(500).send('Error deleting the post');
+                    return;
+                }
+                res.status(200).send('게시글이 삭제되었습니다.');
+            });
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send(error);
@@ -172,20 +139,24 @@ postController.delete('/api/posts/:postId', async (req, res) => {
 postController.get('/api/posts/:postId/checkEditPermission', async (req, res) => {
     const postId = req.params.postId;
     try {
-        const posts = await readPostsFile();
-        const post = posts[postId];
-        if (!post) {
-            return res.status(404).send('포스트를 찾을 수 없음');
-        }
-
         const userIdCookie = req.cookies.userId;
-        const authorId = post.authorId;
 
-        if (userIdCookie !== authorId) {
-            return res.status(403).send('수정 권한이 없습니다.');
-        }
-
-        res.status(200).send('수정 권한이 있습니다.');
+        db.query('SELECT user_id FROM community_post WHERE id = ?', [postId], (err, results) => {
+            if (err) {
+                res.status(500).send('Error querying the database');
+                return;
+            }
+            if (results.length === 0) {
+                res.status(404).send('포스트를 찾을 수 없음');
+                return;
+            }
+            const authorId = results[0].user_id;
+            if (userIdCookie !== authorId.toString()) {
+                res.status(403).send('수정 권한이 없습니다.');
+                return;
+            }
+            res.status(200).send('수정 권한이 있습니다.');
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send(error);
@@ -203,28 +174,35 @@ postController.put('/api/posts/:postId', upload.single('postImage'), async (req,
     }
 
     try {
-        let posts = await readPostsFile();
-        const post = posts[postId];
-        if (!post) {
-            return res.status(404).send('포스트를 찾을 수 없음');
-        }
-
         const userIdCookie = req.cookies.userId;
-        const authorId = post.authorId;
 
-        if (userIdCookie !== authorId) {
-            return res.status(403).send('게시글 수정 권한이 없습니다.');
-        }
+        db.query('SELECT user_id FROM community_post WHERE id = ?', [postId], (err, results) => {
+            if (err) {
+                res.status(500).send('Error querying the database');
+                return;
+            }
+            if (results.length === 0) {
+                res.status(404).send('포스트를 찾을 수 없음');
+                return;
+            }
+            const authorId = results[0].user_id;
+            if (userIdCookie !== authorId.toString()) {
+                res.status(403).send('게시글 수정 권한이 없습니다.');
+                return;
+            }
 
-        // Update post fields
-        post.postTitle = postTitle || post.postTitle; // Only update if provided
-        post.postContents = postContents || post.postContents; // Only update if provided
-        if (postImage) {
-            post.postImage = postImage; // Update the image if a new one was uploaded
-        }
+            // Update post fields
+            const updateQuery = 'UPDATE community_post SET title = ?, article = ?, post_picture = ? WHERE id = ?';
+            const updateValues = [postTitle || results[0].title, postContents || results[0].article, postImage || results[0].post_picture, postId];
 
-        await writePostsFile(posts);
-        res.status(200).send('게시글이 업데이트되었습니다.');
+            db.query(updateQuery, updateValues, (err) => {
+                if (err) {
+                    res.status(500).send('Error updating the post');
+                    return;
+                }
+                res.status(200).send('게시글이 업데이트되었습니다.');
+            });
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send(error);
@@ -241,25 +219,23 @@ postController.post('/api/posts', async (req, res) => {
     }
 
     try {
-        let posts = await readPostsFile();
-        const newPostId = Object.keys(posts).length ? Math.max(...Object.keys(posts).map(Number)) + 1 : 1;
-
         const newPost = {
-            postId: newPostId.toString(),
-            postTitle,
-            postContents,
-            postImage,
-            authorId,
-            date: formatDate(new Date()), // Use the formatDate function here
+            title: postTitle,
+            article: postContents,
+            post_picture: postImage,
+            user_id: authorId,
+            create_dt: formatDate(new Date()), // Use the formatDate function here
             views: 0,
             likes: 0,
-            comments: []
         };
 
-        posts[newPostId] = newPost;
-        await writePostsFile(posts);
-
-        res.status(201).send('게시글이 생성되었습니다.');
+        db.query('INSERT INTO community_post SET ?', newPost, (err) => {
+            if (err) {
+                res.status(500).send('Error creating the post');
+                return;
+            }
+            res.status(201).send('게시글이 생성되었습니다.');
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send('게시글 생성 중 오류가 발생했습니다.');
@@ -290,32 +266,38 @@ postController.patch('/api/posts/:postId', async (req, res) => {
     }
 
     try {
-        let posts = await readPostsFile();
-        const post = posts[postId];
+        db.query('SELECT user_id FROM community_post WHERE id = ?', [postId], (err, results) => {
+            if (err) {
+                res.status(500).send('Error querying the database');
+                return;
+            }
+            if (results.length === 0) {
+                res.status(404).send('게시글을 찾을 수 없습니다.');
+                return;
+            }
 
-        if (!post) {
-            return res.status(404).send('게시글을 찾을 수 없습니다.');
-        }
+            if (results[0].user_id !== authorId) {
+                res.status(403).send('수정 권한이 없습니다.');
+                return;
+            }
 
-        if (post.authorId !== authorId) {
-            return res.status(403).send('수정 권한이 없습니다.');
-        }
+            // 게시글 업데이트: 제공된 필드만 업데이트
+            const updateQuery = 'UPDATE community_post SET title = ?, article = ?, post_picture = ? WHERE id = ?';
+            const updateValues = [postTitle || results[0].title, postContents || results[0].article, postImage || results[0].post_picture, postId];
 
-        // 게시글 업데이트: 제공된 필드만 업데이트
-        if (postTitle !== undefined) post.postTitle = postTitle;
-        if (postContents !== undefined) post.postContents = postContents;
-        if (postImage !== undefined) post.postImage = postImage;
-
-        await writePostsFile(posts);
-
-        res.status(200).send('게시글이 수정되었습니다.');
+            db.query(updateQuery, updateValues, (err) => {
+                if (err) {
+                    res.status(500).send('게시글 수정 중 오류가 발생했습니다.');
+                    return;
+                }
+                res.status(200).send('게시글이 수정되었습니다.');
+            });
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send('게시글 수정 중 오류가 발생했습니다.');
     }
 });
-
-
 
 // session api
 postController.get('/session', (req, res, next) => {
@@ -339,23 +321,31 @@ postController.get('/session', (req, res, next) => {
     res.end();
 });
 
-
 //조회수
 postController.put('/api/posts/:postId/views', async (req, res) => {
     const postId = req.params.postId;
 
     try {
-        const posts = await readPostsFile();
-        const post = posts[postId];
+        db.query('SELECT views FROM community_post WHERE id = ?', [postId], (err, results) => {
+            if (err) {
+                res.status(500).send('Error querying the database');
+                return;
+            }
+            if (results.length === 0) {
+                res.status(404).send('포스트를 찾을 수 없음');
+                return;
+            }
 
-        if (!post) {
-            return res.status(404).send('포스트를 찾을 수 없음');
-        }
+            const newViews = results[0].views + 1;
 
-        post.views += 1;
-
-        await writePostsFile(posts);
-        res.status(200).json({ views: post.views });
+            db.query('UPDATE community_post SET views = ? WHERE id = ?', [newViews, postId], (err) => {
+                if (err) {
+                    res.status(500).send('Error updating views');
+                    return;
+                }
+                res.status(200).json({ views: newViews });
+            });
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send(error);
@@ -363,27 +353,23 @@ postController.put('/api/posts/:postId/views', async (req, res) => {
 });
 
 // 댓글 api
-postController.get('/api/posts/:postId/comments/:commentId', async (req, res) => {
+postController.get('/api/posts/:postId/comments/:commentId', (req, res) => {
     const postId = req.params.postId;
-    const commentId = parseInt(req.params.commentId, 10);
-    try {
-        const posts = await readPostsFile();
-        const post = posts[postId];
-        if (!post) {
-            return res.status(404).send('포스트를 찾을 수 없음');
+    const commentId = req.params.commentId;
+
+    const query = 'SELECT * FROM comments WHERE postId = ? AND commentId = ?';
+
+    db.query(query, [postId, commentId], (err, results) => {
+        if (err) {
+            console.error('Error querying the database:', err);
+            return res.status(500).send('Error querying the database');
         }
-        const comment = post.comments.find(comment => comment.commentId === commentId);
-        if (!comment) {
+        if (results.length === 0) {
             return res.status(404).send('댓글을 찾을 수 없음');
         }
-        res.json(comment);
-    } catch (error) {
-        console.error(error);
-        res.status(500).send(error);
-    }
+        res.json(results[0]);
+    });
 });
-
-
 
 // 댓글 수정
 postController.put('/api/posts/:postId/comments/:commentId', async (req, res) => {
@@ -391,42 +377,31 @@ postController.put('/api/posts/:postId/comments/:commentId', async (req, res) =>
     const commentId = parseInt(req.params.commentId, 10);
     const { commentText } = req.body;
     try {
-        const posts = await readPostsFile();
-        const post = posts[postId];
-        if (!post) {
-            return res.status(404).send('포스트를 찾을 수 없음');
-        }
-        const commentIndex = post.comments.findIndex(comment => comment.commentId === commentId);
-        if (commentIndex === -1) {
-            return res.status(404).send('댓글을 찾을 수 없음');
-        }
-        post.comments[commentIndex].commentText = commentText;
-        await writePostsFile(posts);
-        res.json(post.comments[commentIndex]);
+        db.query('UPDATE comments SET commentText = ? WHERE postId = ? AND commentId = ?', [commentText, postId, commentId], (err, results) => {
+            if (err) {
+                res.status(500).send('댓글 수정 중 오류가 발생했습니다.');
+                return;
+            }
+            res.json({ commentText });
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send(error);
     }
 });
 
-
 // 댓글 삭제
 postController.delete('/api/posts/:postId/comments/:commentId', async (req, res) => {
     const postId = req.params.postId;
     const commentId = parseInt(req.params.commentId, 10);
     try {
-        const posts = await readPostsFile();
-        const post = posts[postId];
-        if (!post) {
-            return res.status(404).send('포스트를 찾을 수 없음');
-        }
-        const commentIndex = post.comments.findIndex(comment => comment.commentId === commentId);
-        if (commentIndex === -1) {
-            return res.status(404).send('댓글을 찾을 수 없음');
-        }
-        post.comments.splice(commentIndex, 1);
-        await writePostsFile(posts);
-        res.status(200).send('댓글이 삭제되었습니다.');
+        db.query('DELETE FROM comments WHERE postId = ? AND commentId = ?', [postId, commentId], (err) => {
+            if (err) {
+                res.status(500).send('댓글 삭제 중 오류가 발생했습니다.');
+                return;
+            }
+            res.status(200).send('댓글이 삭제되었습니다.');
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send(error);
@@ -438,27 +413,24 @@ postController.post('/api/posts/:postId/comments', async (req, res) => {
     const postId = req.params.postId;
     const { commentText, commenterId } = req.body;
     try {
-        const posts = await readPostsFile();
-        const post = posts[postId];
-        if (!post) {
-            return res.status(404).send('포스트를 찾을 수 없음');
-        }
-        const newCommentId = post.comments.length ? Math.max(...post.comments.map(c => c.commentId)) + 1 : 1;
         const newComment = {
-            commentId: newCommentId,
+            postId,
             commentText,
             commenterId,
-            commentDate: formatDate(new Date()),
+            commentDate: formatDate(new Date())
         };
-        post.comments.push(newComment);
-        await writePostsFile(posts);
-        res.status(201).json(newComment);
+
+        db.query('INSERT INTO comments SET ?', newComment, (err) => {
+            if (err) {
+                res.status(500).send('댓글 작성 중 오류가 발생했습니다.');
+                return;
+            }
+            res.status(201).json(newComment);
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send(error);
     }
 });
-
-
 
 module.exports = postController;
