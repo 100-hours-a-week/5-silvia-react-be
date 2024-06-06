@@ -3,12 +3,13 @@ const fileUpload = require('express-fileupload');
 const path = require('path');
 const bodyParser = require('body-parser');
 const fs = require('fs');
-const postController = express.Router();
 const cookieParser = require('cookie-parser');
 const multer = require("multer");
 const cors = require('cors');
 const helmet = require('helmet');
 const db = require('../db');  // db.js 파일을 불러옴
+
+const postController = express.Router();
 
 postController.use('/uploads', express.static('uploads'));
 postController.use(cookieParser());
@@ -87,17 +88,25 @@ postController.get('/api/posts/:postId', (req, res) => {
 // 댓글 api
 postController.get('/api/posts/:postId/comments', async (req, res) => {
     const postId = req.params.postId;
+
     try {
-        db.query('SELECT * FROM comments WHERE postId = ?', [postId], (err, results) => {
+        const query = `
+            SELECT c.id, c.post_id, c.comment_content, c.user_id, c.create_dt, u.nickname, u.profile_picture
+            FROM post_comment c
+            LEFT JOIN community_user u ON c.user_id = u.user_id
+            WHERE c.post_id = ?
+        `;
+
+        db.query(query, [postId], (err, results) => {
             if (err) {
-                res.status(500).send('Error querying the database');
-                return;
+                console.error('Error fetching comments:', err);
+                return res.status(500).send('Error fetching comments.');
             }
-            res.json(results);
+            res.status(200).json(results);
         });
     } catch (error) {
-        console.error(error);
-        res.status(500).send(error);
+        console.error('Error in /api/posts/:postId/comments:', error);
+        res.status(500).send('Internal server error');
     }
 });
 
@@ -176,7 +185,7 @@ postController.put('/api/posts/:postId', upload.single('postImage'), async (req,
     try {
         const userIdCookie = req.cookies.userId;
 
-        db.query('SELECT user_id FROM community_post WHERE id = ?', [postId], (err, results) => {
+        db.query('SELECT user_id, title, article, post_picture FROM community_post WHERE id = ?', [postId], (err, results) => {
             if (err) {
                 res.status(500).send('Error querying the database');
                 return;
@@ -185,7 +194,9 @@ postController.put('/api/posts/:postId', upload.single('postImage'), async (req,
                 res.status(404).send('포스트를 찾을 수 없음');
                 return;
             }
-            const authorId = results[0].user_id;
+            const post = results[0];
+            const authorId = post.user_id;
+
             if (userIdCookie !== authorId.toString()) {
                 res.status(403).send('게시글 수정 권한이 없습니다.');
                 return;
@@ -193,19 +204,19 @@ postController.put('/api/posts/:postId', upload.single('postImage'), async (req,
 
             // Update post fields
             const updateQuery = 'UPDATE community_post SET title = ?, article = ?, post_picture = ? WHERE id = ?';
-            const updateValues = [postTitle || results[0].title, postContents || results[0].article, postImage || results[0].post_picture, postId];
+            const updateValues = [postTitle || post.title, postContents || post.article, postImage || post.post_picture, postId];
 
             db.query(updateQuery, updateValues, (err) => {
                 if (err) {
                     res.status(500).send('Error updating the post');
                     return;
                 }
-                res.status(200).send('게시글이 업데이트되었습니다.');
+                res.status(200).send({ message: '게시글이 업데이트되었습니다.', post_picture: postImage || post.post_picture });
             });
         });
     } catch (error) {
         console.error(error);
-        res.status(500).send(error);
+        res.status(500).send('Internal Server Error');
     }
 });
 
@@ -255,47 +266,92 @@ postController.post('/api/posts/image', upload.single('postImage'), (req, res) =
     }
 });
 
-// 게시글 수정
-postController.patch('/api/posts/:postId', async (req, res) => {
-    const { postId } = req.params;
-    const { postTitle, postContents, postImage } = req.body;
-    const authorId = req.cookies.userId;
+// 댓글 수정
+postController.put('/api/posts/:postId/comments/:commentId', async (req, res) => {
+    const commentId = req.params.commentId;
+    const { comment_content } = req.body;
 
-    if (!authorId) {
-        return res.status(401).send('로그인이 필요합니다.');
+    if (!comment_content) {
+        console.error('Missing required fields:', { comment_content });
+        return res.status(400).send('Missing required fields');
     }
 
     try {
-        db.query('SELECT user_id FROM community_post WHERE id = ?', [postId], (err, results) => {
+        const updateData = { comment_content, update_dt: new Date() };
+
+        console.log('Attempting to update comment:', { commentId, updateData });
+
+        db.query('UPDATE post_comment SET ? WHERE id = ?', [updateData, commentId], (err, result) => {
             if (err) {
-                res.status(500).send('Error querying the database');
-                return;
-            }
-            if (results.length === 0) {
-                res.status(404).send('게시글을 찾을 수 없습니다.');
-                return;
+                console.error('Error updating comment:', err);
+                return res.status(500).send('Error updating the comment.');
             }
 
-            if (results[0].user_id !== authorId) {
-                res.status(403).send('수정 권한이 없습니다.');
-                return;
+            if (result.affectedRows === 0) {
+                console.log('Comment not found:', { commentId });
+                return res.status(404).send('Comment not found');
             }
 
-            // 게시글 업데이트: 제공된 필드만 업데이트
-            const updateQuery = 'UPDATE community_post SET title = ?, article = ?, post_picture = ? WHERE id = ?';
-            const updateValues = [postTitle || results[0].title, postContents || results[0].article, postImage || results[0].post_picture, postId];
-
-            db.query(updateQuery, updateValues, (err) => {
-                if (err) {
-                    res.status(500).send('게시글 수정 중 오류가 발생했습니다.');
-                    return;
-                }
-                res.status(200).send('게시글이 수정되었습니다.');
-            });
+            console.log('Comment updated successfully:', { id: commentId, ...updateData });
+            res.status(200).json({ id: commentId, ...updateData });
         });
     } catch (error) {
-        console.error(error);
-        res.status(500).send('게시글 수정 중 오류가 발생했습니다.');
+        console.error('Error in /api/posts/:postId/comments/:commentId:', error);
+        res.status(500).send('Internal server error');
+    }
+});
+
+
+// 댓글 삭제
+postController.delete('/api/posts/:postId/comments/:commentId', async (req, res) => {
+    const postId = req.params.postId;
+    const commentId = parseInt(req.params.commentId, 10);
+    try {
+        db.query('DELETE FROM post_comment WHERE post_id = ? AND id = ?', [postId, commentId], (err, result) => {
+            if (err) {
+                console.error('Error deleting comment:', err);
+                return res.status(500).send('댓글 삭제 중 오류가 발생했습니다.');
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).send('Comment not found');
+            }
+            res.status(200).send('댓글이 삭제되었습니다.');
+        });
+    } catch (error) {
+        console.error('Error deleting comment:', error);
+        res.status(500).send('Internal server error');
+    }
+});
+
+// 댓글 작성
+postController.post('/api/posts/:postId/comments', async (req, res) => {
+    const postId = req.params.postId;
+    const { comment_content, user_id } = req.body;
+
+    if (!comment_content || !user_id) {
+        console.error('Missing required fields:', { comment_content, user_id });
+        return res.status(400).send('Missing required fields');
+    }
+
+    try {
+        const newComment = {
+            post_id: postId,
+            comment_content,
+            user_id,
+            create_dt: new Date()
+        };
+
+        db.query('INSERT INTO post_comment SET ?', newComment, (err, result) => {
+            if (err) {
+                console.error('Error inserting comment:', err);
+                return res.status(500).send('Error creating the comment.');
+            }
+            newComment.id = result.insertId;
+            res.status(201).json(newComment);
+        });
+    } catch (error) {
+        console.error('Error in /api/posts/:postId/comments:', error);
+        res.status(500).send('Internal server error');
     }
 });
 
@@ -321,7 +377,7 @@ postController.get('/session', (req, res, next) => {
     res.end();
 });
 
-//조회수
+// 조회수
 postController.put('/api/posts/:postId/views', async (req, res) => {
     const postId = req.params.postId;
 
@@ -357,7 +413,7 @@ postController.get('/api/posts/:postId/comments/:commentId', (req, res) => {
     const postId = req.params.postId;
     const commentId = req.params.commentId;
 
-    const query = 'SELECT * FROM comments WHERE postId = ? AND commentId = ?';
+    const query = 'SELECT * FROM post_comment WHERE post_id = ? AND id = ?';
 
     db.query(query, [postId, commentId], (err, results) => {
         if (err) {
@@ -369,68 +425,6 @@ postController.get('/api/posts/:postId/comments/:commentId', (req, res) => {
         }
         res.json(results[0]);
     });
-});
-
-// 댓글 수정
-postController.put('/api/posts/:postId/comments/:commentId', async (req, res) => {
-    const postId = req.params.postId;
-    const commentId = parseInt(req.params.commentId, 10);
-    const { commentText } = req.body;
-    try {
-        db.query('UPDATE comments SET commentText = ? WHERE postId = ? AND commentId = ?', [commentText, postId, commentId], (err, results) => {
-            if (err) {
-                res.status(500).send('댓글 수정 중 오류가 발생했습니다.');
-                return;
-            }
-            res.json({ commentText });
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send(error);
-    }
-});
-
-// 댓글 삭제
-postController.delete('/api/posts/:postId/comments/:commentId', async (req, res) => {
-    const postId = req.params.postId;
-    const commentId = parseInt(req.params.commentId, 10);
-    try {
-        db.query('DELETE FROM comments WHERE postId = ? AND commentId = ?', [postId, commentId], (err) => {
-            if (err) {
-                res.status(500).send('댓글 삭제 중 오류가 발생했습니다.');
-                return;
-            }
-            res.status(200).send('댓글이 삭제되었습니다.');
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send(error);
-    }
-});
-
-// 댓글 작성
-postController.post('/api/posts/:postId/comments', async (req, res) => {
-    const postId = req.params.postId;
-    const { commentText, commenterId } = req.body;
-    try {
-        const newComment = {
-            postId,
-            commentText,
-            commenterId,
-            commentDate: formatDate(new Date())
-        };
-
-        db.query('INSERT INTO comments SET ?', newComment, (err) => {
-            if (err) {
-                res.status(500).send('댓글 작성 중 오류가 발생했습니다.');
-                return;
-            }
-            res.status(201).json(newComment);
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send(error);
-    }
 });
 
 module.exports = postController;

@@ -41,14 +41,19 @@ router.use(require('express-session')({
 }));
 
 // 계정 api
-router.get('/api/accounts', (req, res) => {
-    db.query('SELECT * FROM community_user', (err, results) => {
-        if (err) {
-            console.error('Error querying the database:', err);
-            return res.status(500).send('Server error');
-        }
-        res.json({ users: results });
-    });
+router.get('/api/accounts', async (req, res) => {
+    try {
+        db.query('SELECT * FROM community_user', (err, results) => {
+            if (err) {
+                console.error('Error fetching users:', err);
+                return res.status(500).send('Error fetching users.');
+            }
+            res.status(200).json({ users: results });
+        });
+    } catch (error) {
+        console.error('Error in /api/accounts:', error);
+        res.status(500).send('Internal server error');
+    }
 });
 
 // 댓글 api
