@@ -91,7 +91,7 @@ postController.get('/api/posts/:postId/comments', async (req, res) => {
 
     try {
         const query = `
-            SELECT c.id, c.post_id, c.comment_content, c.user_id, c.create_dt, u.nickname, u.profile_picture
+            SELECT c.id, c.post_id, c.comment_content, c.user_id, c.create_at, u.nickname, u.profile_picture
             FROM post_comment c
             LEFT JOIN community_user u ON c.user_id = u.user_id
             WHERE c.post_id = ?
@@ -235,7 +235,7 @@ postController.post('/api/posts', async (req, res) => {
             article: postContents,
             post_picture: postImage,
             user_id: authorId,
-            create_dt: formatDate(new Date()), // Use the formatDate function here
+            create_at: formatDate(new Date()), // Use the formatDate function here
             views: 0,
             likes: 0,
         };
@@ -277,7 +277,7 @@ postController.put('/api/posts/:postId/comments/:commentId', async (req, res) =>
     }
 
     try {
-        const updateData = { comment_content, update_dt: new Date() };
+        const updateData = { comment_content, update_at: new Date() };
 
         console.log('Attempting to update comment:', { commentId, updateData });
 
@@ -338,7 +338,7 @@ postController.post('/api/posts/:postId/comments', async (req, res) => {
             post_id: postId,
             comment_content,
             user_id,
-            create_dt: new Date()
+            create_at: new Date()
         };
 
         db.query('INSERT INTO post_comment SET ?', newComment, (err, result) => {
