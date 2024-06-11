@@ -60,14 +60,24 @@ postController.get('/api/posts', async (req, res) => {
                 res.status(500).send('Error querying the database');
                 return;
             }
-            res.json(results);
+
+            // Format the create_at field
+            const formattedResults = results.map(post => {
+                if (post.create_at) {
+                    const date = new Date(post.create_at);
+                    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                    post.create_at = formattedDate;
+                }
+                return post;
+            });
+
+            res.json(formattedResults);
         });
     } catch (error) {
         console.error('Unexpected error:', error);
         res.status(500).send(error);
     }
 });
-
 // 게시물 id별 api
 postController.get('/api/posts/:postId', (req, res) => {
     const postId = req.params.postId;
@@ -218,6 +228,37 @@ postController.put('/api/posts/:postId', upload.single('postImage'), async (req,
         console.error(error);
         res.status(500).send('Internal Server Error');
     }
+});
+
+// 댓글 api
+postController.get('/api/comments', (req, res) => {
+    const includeEdited = req.query.include_edited === 'true';
+
+    // SQL query to select the necessary fields
+    const query = includeEdited
+        ? 'SELECT id, post_id, user_id, comment_content, create_at, edited_comment_content, update_at FROM post_comment'
+        : 'SELECT id, post_id, user_id, comment_content, create_at FROM post_comment';
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Error querying the database:', err);
+            return res.status(500).send('Server error');
+        }
+
+        // Format the date fields
+        const formattedResults = results.map(result => {
+            const formattedResult = {
+                ...result,
+                create_at: new Date(result.create_at).toISOString().slice(0, 19).replace('T', ' ')
+            };
+            if (includeEdited && result.update_at) {
+                formattedResult.update_at = new Date(result.update_at).toISOString().slice(0, 19).replace('T', ' ');
+            }
+            return formattedResult;
+        });
+
+        res.json({ users: formattedResults });
+    });
 });
 
 // 게시글 작성

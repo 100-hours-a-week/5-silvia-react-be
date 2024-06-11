@@ -56,16 +56,7 @@ router.get('/api/accounts', async (req, res) => {
     }
 });
 
-// 댓글 api
-router.get('/api/comments', (req, res) => {
-    db.query('SELECT * FROM post_comment', (err, results) => {
-        if (err) {
-            console.error('Error querying the database:', err);
-            return res.status(500).send('Server error');
-        }
-        res.json({ users: results });
-    });
-});
+
 
 
 // Fetch account information by userId
